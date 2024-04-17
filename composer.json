@@ -1,0 +1,57 @@
+{
+  "name": "djereg/laravel-rabbitmq",
+  "description": "Laravel RabbitMQ",
+  "license": "MIT",
+  "type": "library",
+  "authors": [{
+    "name": "Györög Norbert"
+  }],
+  "require": {
+    "php": "^8.2",
+    "ext-pcntl": "*",
+    "datto/json-rpc": "^6.1",
+    "illuminate/contracts": "^10.0 || ^11.0",
+    "illuminate/queue": "^10.0 || ^11.0",
+    "illuminate/support": "^10.0 || ^11.0",
+    "php-amqplib/php-amqplib": "^3.0",
+    "vladimir-yuldashev/laravel-queue-rabbitmq": "^13.0 || ^14.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^8.0 || ^9.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Djereg\\Laravel\\RabbitMQ\\Core\\": "src/core",
+      "Djereg\\Laravel\\RabbitMQ\\Event\\": "src/event",
+      "Djereg\\Laravel\\RabbitMQ\\RPC\\Client\\": "src/client",
+      "Djereg\\Laravel\\RabbitMQ\\RPC\\Server\\": "src/server"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Djereg\\Laravel\\RabbitMQ\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config": {
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "optimize-autoloader": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Djereg\\Laravel\\RabbitMQ\\Core\\Providers\\CoreServiceProvider",
+        "Djereg\\Laravel\\RabbitMQ\\Event\\Providers\\EventServiceProvider",
+        "Djereg\\Laravel\\RabbitMQ\\RPC\\Server\\Providers\\ServerServiceProvider"
+      ],
+      "dont-discover": [
+        "vladimir-yuldashev/laravel-queue-rabbitmq"
+      ]
+    }
+  }
+}

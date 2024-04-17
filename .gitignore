@@ -1,0 +1,10 @@
+/vendor
+/.idea
+/.vagrant
+/.coverage
+.env
+.env.backup
+.DS_Store
+.phpunit.result.cache
+composer.lock
+docker-compose.yaml

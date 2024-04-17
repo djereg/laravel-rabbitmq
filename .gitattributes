@@ -1,0 +1,10 @@
+* text eol=lf
+/tests export-ignore
+/vendor export-ignore
+
+/.* export-ignore
+/artisan export-ignore
+/phpcs.* export-ignore
+/phpstan.* export-ignore
+/phpunit.* export-ignore
+/*.sh export-ignore
