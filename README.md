@@ -393,14 +393,6 @@ Dispatched after the message is published.
 use Djereg\Laravel\RabbitMQ\Events\MessagePublished;
 ```
 
-## MessageReceived
-
-Dispatched when the message is received.
-
-```php
-use Djereg\Laravel\RabbitMQ\Events\MessageReceived;
-```
-
 ## MessageProcessing
 
 Dispatched before the message is being processed.
