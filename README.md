@@ -29,7 +29,6 @@ The package is part of the [rabbitmq-multiverse](https://github.com/djereg/rabbi
 - [Lifecycle Events](#lifecycle-events)
     - [MessagePublishing](#messagepublishing)
     - [MessagePublished](#messagepublished)
-    - [MessageReceived](#messagereceived)
     - [MessageProcessing](#messageprocessing)
     - [MessageProcessed](#messageprocessed)
 - [Known Issues](#known-issues)
