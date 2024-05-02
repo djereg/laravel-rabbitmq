@@ -15,7 +15,6 @@ use Djereg\Laravel\RabbitMQ\Queues\RabbitMQQueue as Queue;
 use Djereg\Laravel\RabbitMQ\Responses\Response;
 use ErrorException;
 use Illuminate\Support\Str;
-use OutOfBoundsException;
 use PhpAmqpLib\Channel\AMQPChannel as Channel;
 use PhpAmqpLib\Exception\AMQPIOException;
 use PhpAmqpLib\Exception\AMQPNoDataException;
@@ -33,7 +32,6 @@ class Client
 
     private readonly JsonRpcClient $client;
 
-    private string $uuid;
     private string $consumerTag = '';
 
     public function __construct(
@@ -114,9 +112,8 @@ class Client
      */
     public function send(int $timeout = 30): array
     {
-        $this->uuid = Str::uuid()->toString();
-
-        $message = $this->createMessage($timeout * 1000);
+        $uuid = Str::uuid()->toString();
+        $message = $this->createMessage($uuid, $timeout * 1000);
 
         $this->setupConsumer();
 
@@ -127,7 +124,7 @@ class Client
         }
 
         try {
-            $message = $this->consume($timeout);
+            $message = $this->consume($uuid, $timeout);
         } catch (AMQPRuntimeException $e) {
             throw new TransportException('RPC transport error occurred.', $e);
         } catch (AMQPIOException $e) {
@@ -161,20 +158,23 @@ class Client
             consumer_tag: $this->consumerTag,
             no_ack: true,
             exclusive: true,
-            callback: fn($m) => $this->onMessage($m),
+            callback: function (Message $message) {
+                $this->message = $message;
+            },
         );
 
         $this->consumerTag = $tag;
     }
 
     /**
+     * @param string $uuid
      * @param int $timeout
      *
      * @return Message
      * @throws AMQPIOException
      * @throws TimeoutException
      */
-    private function consume(int $timeout): Message
+    private function consume(string $uuid, int $timeout): Message
     {
         $this->message = null;
 
@@ -200,7 +200,7 @@ class Client
                 continue;
             }
 
-            if ($this->message) {
+            if ($this->message?->get('correlation_id') === $uuid) {
                 break;
             }
         }
@@ -210,19 +210,10 @@ class Client
 
     private function onMessage(Message $message): void
     {
-        try {
-            $uuid = $message->get('correlation_id');
-        } catch (OutOfBoundsException $e) {
-            return;
-        }
-        if ($uuid !== $this->uuid) {
-            return;
-        }
-
         $this->message = $message;
     }
 
-    private function createMessage(int $ttl): Message
+    private function createMessage(string $uuid, int $ttl): Message
     {
         $body = $this->client->encode();
 
@@ -232,7 +223,7 @@ class Client
                 'content_type'        => 'application/json',
                 'delivery_mode'       => Message::DELIVERY_MODE_PERSISTENT,
                 'reply_to'            => self::DIRECT_REPLY_TO,
-                'correlation_id'      => $this->uuid,
+                'correlation_id'      => $uuid,
                 'expiration'          => (string)$ttl,
                 'application_headers' => new AMQPTable([
                     'X-Message-Type' => 'request',
