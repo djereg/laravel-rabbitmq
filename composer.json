@@ -3,9 +3,11 @@
   "description": "Laravel RabbitMQ",
   "license": "MIT",
   "type": "library",
-  "authors": [{
-    "name": "Györög Norbert"
-  }],
+  "authors": [
+    {
+      "name": "Györög Norbert"
+    }
+  ],
   "require": {
     "php": "^8.2",
     "ext-pcntl": "*",
@@ -21,6 +23,7 @@
   },
   "autoload": {
     "psr-4": {
+      "Djereg\\Laravel\\RabbitMQ\\": "src",
       "Djereg\\Laravel\\RabbitMQ\\Core\\": "src/core",
       "Djereg\\Laravel\\RabbitMQ\\Event\\": "src/event",
       "Djereg\\Laravel\\RabbitMQ\\RPC\\Client\\": "src/client",
@@ -45,9 +48,7 @@
   "extra": {
     "laravel": {
       "providers": [
-        "Djereg\\Laravel\\RabbitMQ\\Core\\Providers\\CoreServiceProvider",
-        "Djereg\\Laravel\\RabbitMQ\\Event\\Providers\\EventServiceProvider",
-        "Djereg\\Laravel\\RabbitMQ\\RPC\\Server\\Providers\\ServerServiceProvider"
+        "Djereg\\Laravel\\RabbitMQ\\Providers\\RabbitMQServiceProvider"
       ],
       "dont-discover": [
         "vladimir-yuldashev/laravel-queue-rabbitmq"

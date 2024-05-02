@@ -19,14 +19,17 @@ return [
 
     'options' => [
 
-        'exchange'      => env('RABBITMQ_EXCHANGE_NAME') ?? env('RABBITMQ_EXCHANGE', ''),
-        'exchange_type' => env('RABBITMQ_EXCHANGE_TYPE', 'direct'),
+        'queue' => [
+            'exchange'      => env('RABBITMQ_EXCHANGE_NAME') ?? env('RABBITMQ_EXCHANGE', ''),
+            'exchange_type' => env('RABBITMQ_EXCHANGE_TYPE', 'direct'),
 
+            'job' => \Djereg\Laravel\RabbitMQ\Jobs\RabbitMQJob::class,
+        ],
     ],
 
     /*
      * Set to "horizon" if you wish to use Laravel Horizon.
      */
-    'worker'  => 'default', // env('RABBITMQ_WORKER', 'default'),
+    'worker'  => \Djereg\Laravel\RabbitMQ\Queues\RabbitMQQueue::class,
 
 ];

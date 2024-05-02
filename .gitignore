@@ -8,3 +8,4 @@
 .phpunit.result.cache
 composer.lock
 docker-compose.yaml
+run.sh
