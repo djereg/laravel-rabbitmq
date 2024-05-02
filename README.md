@@ -1,7 +1,9 @@
 # Laravel RabbitMQ
 
-> THIS PACKAGE IS PRIMARILY INTENDED FOR INTERNAL/PRIVATE USE IN OWN PROJECTS. IF IT MEETS YOUR NEEDS, FEEL FREE TO USE
-> IT, BUT IN CASE OF ANY MODIFICATION REQUESTS, I WILL CONSIDER MY OWN NEEDS FIRST.
+**THIS PACKAGE IS PRIMARILY INTENDED FOR INTERNAL/PRIVATE USE IN OWN PROJECTS.
+IF IT MEETS YOUR NEEDS, FEEL FREE TO USE IT, BUT IN CASE OF ANY MODIFICATION REQUESTS, I WILL CONSIDER MY OWN NEEDS FIRST.**
+
+The package is part of the [rabbitmq-multiverse](https://github.com/djereg/rabbitmq-multiverse).
 
 # Table of Contents
 
@@ -27,7 +29,6 @@
 - [Lifecycle Events](#lifecycle-events)
     - [MessagePublishing](#messagepublishing)
     - [MessagePublished](#messagepublished)
-    - [MessageReceived](#messagereceived)
     - [MessageProcessing](#messageprocessing)
     - [MessageProcessed](#messageprocessed)
 - [Known Issues](#known-issues)
@@ -391,14 +392,6 @@ Dispatched after the message is published.
 
 ```php
 use Djereg\Laravel\RabbitMQ\Events\MessagePublished;
-```
-
-## MessageReceived
-
-Dispatched when the message is received.
-
-```php
-use Djereg\Laravel\RabbitMQ\Events\MessageReceived;
 ```
 
 ## MessageProcessing
