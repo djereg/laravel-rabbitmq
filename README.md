@@ -1,44 +1,63 @@
-# First of all
-
-**This package is primarily intended for internal, private use in own projects. If it meets your needs, feel free to use it, but in case of any modification requests, I will consider my own needs first.**
-
 # Laravel RabbitMQ
 
-## Table of Contents
+> THIS PACKAGE IS PRIMARILY INTENDED FOR INTERNAL/PRIVATE USE IN OWN PROJECTS. IF IT MEETS YOUR NEEDS, FEEL FREE TO USE
+> IT, BUT IN CASE OF ANY MODIFICATION REQUESTS, I WILL CONSIDER MY OWN NEEDS FIRST.
+
+# Table of Contents
 
 - [Description](#description)
 - [Motivation](#motivation)
 - [Usage](#usage)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
+    - [Installation](#installation)
+    - [Configuration](#configuration)
+    - [Starting the consumer](#starting-the-consumer)
 - [Events](#events)
-  - [Dispatching events](#dispatching-events)
-  - [Listening for events](#listening-for-events)
-  - [How the events are processed?](#how-the-events-are-processed)
+    - [Dispatching events](#dispatching-events)
+    - [Listening to events](#listening-to-events)
+    - [Errors in event listeners](#errors-in-event-listeners)
+    - [Processing events asynchronously](#processing-events-asynchronously)
+    - [Subscribing to events](#subscribing-to-events)
 - [RPC](#rpc)
-  - [Calling remote procedures](#calling-remote-procedures)
-  - [Handling remote procedure calls](#handling-remote-procedure-calls)
-  - [How the procedure calls are processed?](#how-the-procedure-calls-are-processed)
+    - [Registering clients](#registering-clients)
+    - [Calling remote procedures](#calling-remote-procedures)
+    - [Registering remote procedures](#registering-remote-procedures)
+    - [Handling procedure calls](#handling-procedure-calls)
+    - [How the procedure calls are processed?](#how-the-procedure-calls-are-processed)
+- [Laravel Queue](#laravel-queue)
+- [Lifecycle Events](#lifecycle-events)
+    - [MessagePublishing](#messagepublishing)
+    - [MessagePublished](#messagepublished)
+    - [MessageReceived](#messagereceived)
+    - [MessageProcessing](#messageprocessing)
+    - [MessageProcessed](#messageprocessed)
+- [Known Issues](#known-issues)
+- [License](#license)
 
-## Description
+# Description
 
 This package is an intermediate layer between RabbitMQ and Laravel Queue.
 
-The package is based on [vladimir-yuldashev/laravel-queue-rabbitmq](https://github.com/vyuldashev/laravel-queue-rabbitmq) package, which adds RabbitMQ as a queue driver to Laravel.
+The package is based
+on [vladimir-yuldashev/laravel-queue-rabbitmq](https://github.com/vyuldashev/laravel-queue-rabbitmq) package, which adds
+RabbitMQ as a queue driver to Laravel.
 
-This package extends the functionality of the original package by adding the ability to send and receive events and RPC calls through RabbitMQ messages.
+This package extends the functionality of the original package by adding the ability to send and receive events and RPC
+calls through RabbitMQ messages.
 
-## Motivation
+# Motivation
 
-Since the microservice architecture has become very popular, I needed a library that provides the possibility of communicating with services written in different programming languages or frameworks.
+Since the microservice architecture has become very popular, I needed a library that provides the possibility of
+communicating with services written in different programming languages or frameworks.
 
-Laravel has a powerful queue system, but it is a closed Laravel specific system. This package allows you to communicate through messages between Laravel and/or other non-Laravel microservices.
+Laravel has a powerful queue system, but it is a closed Laravel-only system. This package allows you to communicate
+through messages between Laravel and/or other non-Laravel microservices.
 
-On the top of simple JSON messages, utilizes the Laravel Queue system, which perfectly does the rest of the job.
+On the top of simple JSON messages, utilizes the Laravel [Queue](https://laravel.com/docs/11.x/queues)
+and [Event](https://laravel.com/docs/11.x/events) system, which perfectly does the rest of the job.
 
-## Usage
+# Usage
 
-### Installation
+## Installation
 
 You can install this package via composer using this command:
 
@@ -48,7 +67,7 @@ composer require djereg/laravel-rabbitmq
 
 The package will automatically register itself.
 
-### Configuration
+## Configuration
 
 The configuration is done through environment variables.
 
@@ -62,19 +81,32 @@ RABBITMQ_USER=guest
 RABBITMQ_PASSWORD=guest
 RABBITMQ_VHOST=/
 RABBITMQ_QUEUE=queue-name
-RABBITMQ_EXCHANGE=exchange-name
+RABBITMQ_EXCHANGE_NAME=exchange-name
+RABBITMQ_EXCHANGE_TYPE=direct
 ```
 
-## Events
+## Starting the consumer
+
+To start the consumer, just run the following command:
+
+```bash
+php artisan rabbitmq:consume
+```
+
+# Events
 
 Provides an event based asynchronous communication between services.
 
-### Dispatching events
+## Dispatching events
 
-Create an event class that extends the `MessagePublishEvent` class.
+Create an event class that extends `MessagePublishEvent` provided by this package.
 
 ```php
-use Djereg\Laravel\RabbitMQ\Event\Events\MessagePublishEvent;
+# app/Events/UserCreated.php
+
+namespace App\Events;
+
+use Djereg\Laravel\RabbitMQ\Events\MessagePublishEvent;
 
 class UserCreated extends MessagePublishEvent
 {
@@ -102,21 +134,27 @@ And after just dispatch the event like any other Laravel event.
 event(new UserCreated($user));
 ```
 
-### Listening for events
+## Listening to events
 
-Create an event listener class that extends the `MessageQueueListener` class.
+Create an event listener that extends `MessageEventListener` provided by this package.
 
 The working mechanism is a little bit different from the Laravel event listeners.
 First, you have to specify the events you want to listen to in the `$listen` property.
 Next, instead of public `handle()` method, you have to define the `onEvent()` method.
-This is because the `handle()` method is already used under the hood by the parent class.
+This is because the `handle()` method is already used under the hood by the base `MessageEventListener` class.
 
 ```php
-class NotifyUser extends MessageQueueListener {
+# app/Listeners/NotifyUser.php
+
+namespace App\Listeners;
+
+use Djereg\Laravel\RabbitMQ\Listeners\MessageEventListener;
+
+class NotifyUser extends MessageEventListener {
 
     // Specify the events you want to listen to.
     // You can listen to multiple events by adding them to the array.
-    protected array $listen = [
+    public static array $listen = [
         'user.created',
 
         // 'user.updated',
@@ -126,7 +164,7 @@ class NotifyUser extends MessageQueueListener {
 
     // The method that will be called when the event is received.
     // The event object is passed as an argument containing the event name and payload.
-    protected function onEvent(MessageQueueEvent $event): void {
+    protected function onEvent(MessageEvent $event): void {
 
     }
 
@@ -134,7 +172,7 @@ class NotifyUser extends MessageQueueListener {
     // The method name must be in the format on{EventName} where {EventName}
     // is the StudlyCase format of the event defined in the $listen property.
     // When both methods are defined, the on{EventName} method will be called.
-    protected function onUserCreated(MessageQueueEvent $event): void {
+    protected function onUserCreated(MessageEvent $event): void {
         //
     }
 
@@ -142,24 +180,81 @@ class NotifyUser extends MessageQueueListener {
 }
 ```
 
-### How the events are processed?
+## Errors in event listeners
 
-When an event-type message is received, the matching listener will be queued by default, and will be processed by the Laravel queue worker in the same way as other queued jobs.
+Since the event listeners are processed synchronously by default, if an error occurs, the job will fail and will be
+retried by the retry mechanism, if it is enabled and configured.
 
-This means that the received event will be processed in two iterations. First, the message will be received and queued, and then the listener will be processed by the Laravel queue worker.
+If multiple listeners listening to the same event, the processing will stop at the first listener that throws an error
+and the rest of the listeners will not be processed.
 
-## RPC
+You have multiple options to prevent this behavior:
 
-Works very similarly to events, but with the difference that the matching listener can and must return a response.
+- Run the listener in the try-catch block and handle the error in the listener.
+- Put the listeners to the queue and process the events asynchronously. This way the failed listener (job) will not
+  block the
+  processing of the other listeners.
+
+## Processing events asynchronously
+
+The events are processed synchronously by default, but you can process them asynchronously by implementing the
+`ShouldQueue` interface.
+
+```php
+# app/Listeners/NotifyUser.php
+
+namespace App\Listeners;
+
+use Djereg\Laravel\RabbitMQ\Listeners\MessageEventListener;
+
+class NotifyUser extends MessageEventListener implements ShouldQueue
+{
+    // Listener content
+}
+```
+
+## Subscribing to events
+
+When starting the consumer, it automatically creates the exchange and the queue if they do not exist,
+but to register the events listening to, you have to modify the `EventServiceProvider` to extend the
+`EventServiceProvider` provided by this package.
+In Laravel 11 the `EventServiceProvider` does not exist by default, so you have to create and register it manually.
+See the example below.
+
+```php
+# app/Providers/EventServiceProvider.php
+
+namespace App\Providers;
+
+use Djereg\Laravel\RabbitMQ\Providers\EventServiceProvider as ServiceProvider;
+
+class EventServiceProvider extends ServiceProvider
+{
+    // Provider content
+}
+```
+
+The service provider discovers all event listeners from the `app/Listeners` directory and the routing keys will be bound
+automatically when the consumer started.
+
+# RPC
+
+A synchronous-like communication between services.
 
 Uses the [JSON-RPC 2.0](https://www.jsonrpc.org/specification) protocol for communication.
 
-### Calling remote procedures
+## Registering clients
 
-First of all you have to set up a client and inject it into the service where you want to use it. The best way is to do it in a service provider.
+To call remote procedures, you have to create an instance of the `Client` class and inject it into the service where you
+want to use it.
+The best way is to do it in a service provider.
 
 ```php
-use Djereg\Laravel\RabbitMQ\RPC\Client\Services\Client;
+# app/Providers/AppServiceProvider.php
+
+namespace App\Providers;
+
+use Djereg\Laravel\RabbitMQ\Services\Client;
 
 class AppServiceProvider extends ServiceProvider {
 
@@ -167,79 +262,165 @@ class AppServiceProvider extends ServiceProvider {
     {
         $this->app->singleton(UserService::class, function($app) {
 
-            $remoteServiceName = 'users';
-
             // Instantiate the client with the remote service name and the queue connection
-            $client = new Client($remoteServiceName, $app['queue.connection'])
+            $client = new Client('users', $app['queue.connection'])
 
             // Inject the client into the service
             return new UserService($client);
-        })
+        });
     }
 }
 ```
 
-Then you can use the client in the service.
+Anyway, you can create the client instance wherever you want, but remember to pass the queue connection as the second
+argument.
 
 ```php
-use Djereg\Laravel\RabbitMQ\RPC\Client\Services\Client;
+$client = new Client('users', app('queue.connection'));
+```
+
+## Calling remote procedures
+
+In the service where you injected the client, you can call the remote procedures.
+
+```php
+# app/Services/UserService.php
+
+namespace App\Services;
+
+use Djereg\Laravel\RabbitMQ\Services\Client;
 
 class UserService {
 
-    public function __construct(private Client $client) {}
+    public function __construct(private Client $users) {}
 
-    public function getUser(int $id): User
+    public function getUser(int $id): mixed
     {
         // Call the remote procedure
-        $user = $this->client->call('get', ['id' => $id]);
+        $user = $this->users->call('get', ['id' => $id]);
 
-        // Return the user model (for example)
-        return new User($user);
+        // Process the response and return it
     }
 }
 ```
 
-### Handling remote procedure calls
+## Registering remote procedures
 
-Create a listener class that extends the `Procedure` class.
+Register the `ProcedureServiceProvider` provided by this package.
+The service provider will automatically discover all procedures in the `app/Procedures` directory by default.
+The automatic discovery runs only when the application is started in console mode.
 
-Works very similarly to the event listeners described above.
-The `handle()` method is used under the hood by the parent class, so you have to define the `__invoke()` method.
-This method will be called when the procedure is called.
+If you want to customize the service provider, you can create your own that extends the `ProcedureServiceProvider` class
+provided by this package and register it.
 
 ```php
-use Djereg\Laravel\RabbitMQ\RPC\Server\Listeners\Procedure;
+# app/Providers/ProcedureServiceProvider.php
+
+namespace App\Providers;
+
+use Djereg\Laravel\RabbitMQ\Providers\ProcedureServiceProvider as ServiceProvider;
+
+class ProcedureServiceProvider extends ServiceProvider
+{
+    //
+}
+```
+
+## Handling procedure calls
+
+When the service provider is registered, you can create the procedures in the `app/Procedures` directory.
+Create a class that extends the `Procedure` class and define the `method` property with the name of the procedure.
+
+```php
+# app/Procedures/GetUser.php
+
+namespace App\Procedures;
+
+use Djereg\Laravel\RabbitMQ\Procedures\Procedure;
 
 class GetUser extends Procedure {
 
     // Set the procedure name that will be called by the client
-    protected string $method = 'get';
+    public static string $name = 'get';
 
-    public function __invoke(int $id): array
+    public function __invoke(int $id): mixed
     {
-        $user = User::find($id);
+        // Get the user from the database and return it
+    }
 
-        return $user->toArray();
+    // OR
+
+    public function handle(int $id): mixed
+    {
+        // Get the user from the database and return it
     }
 }
 ```
 
-You have to return any basic PHP type or array, except `null`. It should be fixed in the future,
-but not today. The short story is that since the procedures are listeners, the event dispatcher
-expects a non-null return value to decide whether the procedure was found and executed successfully.
-This has a small performance impact, but it is negligible.
+You can define the `__invoke()` or `handle()` method to process the procedure call.
+If both methods are defined, an exception will be thrown as multiple handlers are not allowed for one procedure.
+The same applies to multiple procedure classes with the same name.
 
-### How the procedure calls are processed?
+## How the procedure calls are processed?
 
-Almost the same [as events](#how-the-events-are-processed).
+When a procedure call message is received, the request body is passed
+to [datto/php-json-rpc](https://github.com/datto/php-json-rpc) server component, which processes the request and calls
+the matching procedure, and finally returns the response object, which is sent back to the requester.
 
-The procedure-type message puts a handler job to the queue and Laravel does the rest of the job.
+# Laravel Queue
 
-## Known Issues
+The [Laravel Queue](https://laravel.com/docs/11.x/queues) is also supported by this package. You can send jobs to the
+queue and the consumer will process them
+as the original Laravel queue worker.
 
-- The RPC part is not optimized, but works well for small projects. Should be totally rewritten.
+# Lifecycle Events
+
+The package emits events during the message processing.
+
+## MessagePublishing
+
+Dispatched before the message is being published.
+
+```php
+use Djereg\Laravel\RabbitMQ\Events\MessagePublishing;
+```
+
+## MessagePublished
+
+Dispatched after the message is published.
+
+```php
+use Djereg\Laravel\RabbitMQ\Events\MessagePublished;
+```
+
+## MessageReceived
+
+Dispatched when the message is received.
+
+```php
+use Djereg\Laravel\RabbitMQ\Events\MessageReceived;
+```
+
+## MessageProcessing
+
+Dispatched before the message is being processed.
+
+```php
+use Djereg\Laravel\RabbitMQ\Events\MessageReceived;
+```
+
+## MessageProcessed
+
+Dispatched after the message is processed.
+
+```php
+use Djereg\Laravel\RabbitMQ\Events\MessageProcessed;
+```
+
+# Known Issues
+
 - NO TESTS! I know, I know. I will write them soon.
 
-## License
+# License
 
 [MIT licensed](LICENSE)
