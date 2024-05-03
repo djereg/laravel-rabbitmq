@@ -23,11 +23,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Djereg\\Laravel\\RabbitMQ\\": "src",
-      "Djereg\\Laravel\\RabbitMQ\\Core\\": "src/core",
-      "Djereg\\Laravel\\RabbitMQ\\Event\\": "src/event",
-      "Djereg\\Laravel\\RabbitMQ\\RPC\\Client\\": "src/client",
-      "Djereg\\Laravel\\RabbitMQ\\RPC\\Server\\": "src/server"
+      "Djereg\\Laravel\\RabbitMQ\\": "src"
     }
   },
   "autoload-dev": {
