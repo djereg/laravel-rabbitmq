@@ -3,6 +3,9 @@
 **THIS PACKAGE IS PRIMARILY INTENDED FOR INTERNAL/PRIVATE USE IN OWN PROJECTS.
 IF IT MEETS YOUR NEEDS, FEEL FREE TO USE IT, BUT IN CASE OF ANY MODIFICATION REQUESTS, I WILL CONSIDER MY OWN NEEDS FIRST.**
 
+It is still in a very early development phase, so I do not really recommend using it for now,
+because anything can change on it at any time and previous functions may break.
+
 The package is part of the [rabbitmq-multiverse](https://github.com/djereg/rabbitmq-multiverse).
 
 # Table of Contents
