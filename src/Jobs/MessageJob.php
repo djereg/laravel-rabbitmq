@@ -4,7 +4,7 @@ namespace Djereg\Laravel\RabbitMQ\Jobs;
 
 use Djereg\Laravel\RabbitMQ\Events\MessageReceived;
 use Djereg\Laravel\RabbitMQ\Services\ArrayBag;
-use Illuminate\Events\Dispatcher;
+use Illuminate\Contracts\Events\Dispatcher;
 
 readonly class MessageJob
 {
